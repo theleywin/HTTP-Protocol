@@ -44,7 +44,10 @@ class HTTPClient :
         f"{head_info['reason_phrase']}"
     )
         return {
-            "status": status_line,
+            "status_line": status_line,
+            "http_version": head_info['http_version'],
+            "status":head_info['status_code'],
+            "reason":head_info['reason_phrase'],
             "headers": head_info["headers_fields"],
             "body": body
         }
