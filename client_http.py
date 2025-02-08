@@ -42,44 +42,6 @@ class HTTPClient :
 
 
 class CharacterUtils:
-    def is_character(self, char: str) -> bool: 
-        return 0 <= ord(char) <= 127
-
-    def is_uppercase(self, char: str) -> bool: 
-        return char.isupper()
-
-    def is_lowercase(self, char: str) -> bool: 
-        return char.islower()
-
-    def is_alphabetic(self, char: str) -> bool:
-        return self.is_uppercase(char) or self.is_lowercase(char)
-
-    def is_numeric(self, char: str) -> bool:
-        return char.isdigit()
-
-    def is_control(self, char: str) -> bool:
-        return (0 <= ord(char) <= 31) or ord(char) == 127
-
-    def is_carriage_return(self, char: str) -> bool:
-        return char == self.carriage_return
-
-    def is_line_feed(self, char: str) -> bool:
-        return char == self.line_feed
-
-    def is_space(self, char: str) -> bool:
-        return char == self.space
-
-    def is_horizontal_tab(self, char: str) -> bool:
-        return char == self.horizontal_tab
-
-    def is_text_character(self, char: str) -> bool:
-        return self.is_character(char) and not self.is_control(char)
-
-    def is_hexadecimal(self, char: str) -> bool:
-        return self.is_numeric(char) or ('A' <= char <= 'F') or ('a' <= char <= 'f')    
-
-    def is_separator(self, char: str) -> bool:
-        return char in self.separator_characters
 
     carriage_return = '\r'
     line_feed = '\n'
