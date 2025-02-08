@@ -1,10 +1,10 @@
 import json
 import socket
 import argparse
-import CharacterUtils
-import HttpHelper
-import HTTPRequest 
-import HTTPResponse 
+from CharacterUtils import CharacterUtils
+from HttpHelper import HttpHelper
+from HTTPRequest import HTTPRequest 
+from HTTPResponse import HTTPResponse 
 
 class HTTPClient :
     def __init__(self, url):

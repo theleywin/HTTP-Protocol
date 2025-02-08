@@ -1,4 +1,4 @@
-import CharacterUtils
+from CharacterUtils import CharacterUtils
 import re
 
 

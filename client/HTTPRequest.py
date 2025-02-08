@@ -1,5 +1,5 @@
-import CharacterUtils
-import HttpHelper 
+from CharacterUtils import CharacterUtils
+from HttpHelper import HttpHelper 
 import json
 
 
