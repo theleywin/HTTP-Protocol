@@ -207,15 +207,11 @@ def parse():
     
     args = parser.parse_args()
     
-    try:
-        headers = json.loads(args.headers)  # Convert headers from string to dictionary
-    except json.JSONDecodeError:
-        raise ValueError("Invalid headers format. Provide a valid JSON string.")
 
     return {
         "method": args.method.upper(),
         "url": args.url,
-        "headers": headers,
+        "headers": args.headers,
         "data": args.data,
     }
     
