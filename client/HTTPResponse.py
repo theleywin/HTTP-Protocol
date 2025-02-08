@@ -22,5 +22,5 @@ class HTTPResponse:
             "http_version": http_version,
             "status_code": int(status_code),
             "reason_phrase": reason_phrase,
-            "headers": header_fields
+            "headers_fields": header_fields
         }
