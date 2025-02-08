@@ -92,8 +92,8 @@ class CharacterUtils:
 
 class HttpHelper:
     
-    def format_http_version(major: int, minor: int) -> str:
-        return f"HTTP/{major}.{minor}"
+    def format_http_version(min: int, max: int):
+        return "HTTP" + "/" + str(min) + '.' + str(max)
 
     
     def parse_url(url: str):
