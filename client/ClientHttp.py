@@ -36,10 +36,15 @@ class HTTPClient :
         head_info = HTTPResponse.parse_response_head(head)
         if "Content-Length" in head_info["headers_fields"]:
             body = req_socket.recv(int(head_info["headers_fields"]["Content-Length"])).decode()
+            
+            
+        status_line = (
+        f"{head_info['http_version']} "
+        f"{head_info['status_code']} "
+        f"{head_info['reason_phrase']}"
+    )
         return {
-            "http_version": head_info["http_version"],
-            "status": head_info["status_code"],
-            "reason": head_info["reason_phrase"],
+            "status": status_line,
             "headers": head_info["headers_fields"],
             "body": body
         }
