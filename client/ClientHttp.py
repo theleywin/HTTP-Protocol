@@ -34,8 +34,8 @@ class HTTPClient :
             if head.endswith(CharacterUtils.crlf * 2):
                 break
         head_info = HTTPResponse.parse_response_head(head)
-        if "Content-Length" in head_info["headers"]:
-            body = req_socket.recv(int(head_info["headers"]["Content-Length"])).decode()
+        if "Content-Length" in head_info["headers_fields"]:
+            body = req_socket.recv(int(head_info["headers_fields"]["Content-Length"])).decode()
         return {
             "http_version": head_info["http_version"],
             "status": head_info["status_code"],
