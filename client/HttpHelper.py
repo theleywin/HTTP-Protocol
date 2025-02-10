@@ -7,8 +7,14 @@ class HttpHelper:
 
     
     def parse_url(url: str):
-       
-        default_port = 80
+        if url.startswith("http://"):
+            url = url[7:] 
+            default_port = 80
+        elif url.startswith("https://"):
+            url = url[8:] 
+            default_port = 443
+        else:
+            default_port = 80
 
         # Split the host and path
         split_index = url.find("/")
