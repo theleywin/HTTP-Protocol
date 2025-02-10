@@ -1,5 +1,6 @@
 import json
 import socket
+import ssl
 import argparse
 from CharacterUtils import CharacterUtils
 from HttpHelper import HttpHelper
@@ -7,15 +8,22 @@ from HTTPRequest import HTTPRequest
 from HTTPResponse import HTTPResponse 
 
 class HTTPClient :
-    def __init__(self, url):
+    def __init__(self, url, use_https=False):
         host, port, path = HttpHelper.parse_url(url)
         self.host = host
         self.port = port
         self.url = url
         self.path = path
+        self.use_https = use_https
     
     def send_request(self, method: str, header: str, data: str):
         req_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        
+        if self.use_https:
+                context = ssl.create_default_context()
+                req_socket = context.wrap_socket(req_socket, server_hostname=self.host)
+                self.port = 443
+                
         req_socket.connect((self.host, self.port))        
         request = HTTPRequest.build_http_request(method=method, uri=self.path,  headers=header, body=data)
         req_socket.send(request.encode())
