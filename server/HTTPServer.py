@@ -2,6 +2,7 @@ import socket
 from threading import Thread
 import json
 import xml.etree.ElementTree as ET
+import token
 
 carriage_return = '\r'
 line_feed = '\n'
@@ -14,7 +15,6 @@ class HTTPServer:
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.bind((self.host, self.port))
         self.server_socket.listen(5)
-        self.TOKEN = "12345"
         print(f"Server is listening on {self.host}:{self.port}")
 
     def start(self):
@@ -76,18 +76,27 @@ class HTTPServer:
             if path.startswith("/secure"):
                 if "Authorization" in headers:
                     auth_token = headers["Authorization"].replace("Bearer ", "").strip()
-                    if auth_token != self.TOKEN:
-                        return "HTTP/1.1 401 Unauthorized"+crlf+"Content-Type: text/plain"+crlf+crlf+"Invalid or missing authorization token."
+                    if auth_token != token.TOKEN:
+                        response_body = "Invalid or missing authorization token."
+                        response_headers = [
+                            f"Content-Type: text/plain",
+                            f"Content-Length: {len(response_body)}",
+                        ]
+                        return self.build_response(http_version,401,response_headers,response_body)
                 else:
-                    return  "HTTP/1.1 401 Unauthorized"+crlf+"Content-Type: text/plain"+crlf+crlf+"Authorization header missing."
+                    response_body = "Authorization header missing."
+                    response_headers = [
+                        f"Content-Type: text/plain",
+                        f"Content-Length: {len(response_body)}",
+                    ]
+                    return self.build_response(http_version,401,response_headers,response_body)
             if method == 'GET':
                 response_body = f'Received GET request from {path}'
                 response_headers = [
-                    f"{http_version} 200 {self.get_status_phrase(200)}",
                     f"Content-Type: text/plain",
                     f"Content-Length: {len(response_body)}",
                 ]
-                return crlf.join(response_headers) + crlf + crlf + response_body
+                return self.build_response(http_version,200,response_headers,response_body)
             elif method == 'POST':
                 content_type = headers.get("Content-Type", "text/plain")
                 try:
@@ -96,11 +105,10 @@ class HTTPServer:
                             json.loads(body) 
                             response_body = f"{body}"
                             response_headers = [
-                                f"{http_version} 200 {self.get_status_phrase(200)}",
                                 f"Content-Type: {content_type}",
                                 f"Content-Length: {len(response_body)}"
                             ]
-                            return crlf.join(response_headers) + crlf + crlf + response_body
+                            return self.build_response(http_version,201,response_headers,response_body)
                         except json.JSONDecodeError:
                             raise ValueError("Malformed JSON body")
                     elif content_type == "application/xml":
@@ -109,29 +117,26 @@ class HTTPServer:
                             ET.fromstring(body) 
                             response_body = f"{body}"
                             response_headers = [
-                                f"{http_version} 200 {self.get_status_phrase(200)}",
                                 f"Content-Type: {content_type}",
                                 f"Content-Length: {len(response_body)}"
                             ]
-                            return crlf.join(response_headers) + crlf + crlf + response_body
+                            return self.build_response(http_version,201,response_headers,response_body)
                         except ET.ParseError:
                             raise ValueError("Malformed XML body")
                     else:
                         # Manejar cuerpos de texto o desconocidos
                         response_body = f"{body}"
                         response_headers = [
-                            f"{http_version} 201 {self.get_status_phrase(201)}",
                             f"Content-Type: {content_type}",
                             f"Content-Length: {len(response_body)}"
                         ]
-                        return crlf.join(response_headers) + crlf + crlf + response_body
+                        return self.build_response(http_version,201,response_headers,response_body)
                 except (IndexError, ValueError) as e:
                     response_headers = [
-                        f"{http_version} 400 {self.get_status_phrase(400)}",
                         "Content-Type: text/plain",
                         f"Content-Length: {len(str(e))}"
                     ]
-                    return crlf.join(response_headers) +crlf+crlf + str(e)
+                    return self.build_response(http_version,400,response_headers,str(e))
             elif method == 'PUT':
                 content_type = headers.get("Content-Type", "text/plain")
                 try:
@@ -140,11 +145,10 @@ class HTTPServer:
                             json.loads(body) 
                             response_body = f"{body}"
                             response_headers = [
-                                f"{http_version} 200 {self.get_status_phrase(200)}",
                                 f"Content-Type: {content_type}",
                                 f"Content-Length: {len(response_body)}"
                             ]
-                            return crlf.join(response_headers) + crlf + crlf + response_body
+                            return self.build_response(http_version,200,response_headers,response_body)
                         except json.JSONDecodeError:
                             raise ValueError("Malformed JSON body")
                     elif content_type == "application/xml":
@@ -152,90 +156,80 @@ class HTTPServer:
                             ET.fromstring(body) 
                             response_body = f"{body}"
                             response_headers = [
-                                f"{http_version} 200 {self.get_status_phrase(200)}",
                                 f"Content-Type: {content_type}",
                                 f"Content-Length: {len(response_body)}"
                             ]
-                            return crlf.join(response_headers) + crlf + crlf + response_body
+                            return self.build_response(http_version,200,response_headers,response_body)
                         except ET.ParseError:
                             raise ValueError("Malformed XML body")
                     else:
                         # Manejar cuerpos de texto o desconocidos
                         response_body = f"{body}"
                         response_headers = [
-                            f"{http_version} 200 {self.get_status_phrase(200)}",
                             f"Content-Type: {content_type}",
                             f"Content-Length: {len(response_body)}"
                         ]
-                        return crlf.join(response_headers) + crlf + crlf + response_body
+                        return self.build_response(http_version,200,response_headers,response_body)
                 except (IndexError, ValueError) as e:
                     response_headers = [
-                        f"{http_version} 400 {self.get_status_phrase(400)}",
                         "Content-Type: text/plain",
                         f"Content-Length: {len(str(e))}"
                     ]
-                    return crlf.join(response_headers) + crlf + crlf + str(e)
+                    return self.build_response(http_version,400,response_headers,str(e))
             elif method == 'DELETE':
                 response_body = f'Resource at {path} deleted successfully'
                 response_headers = [
-                    f"{http_version} 200 {self.get_status_phrase(200)}",
                     f"Content-Type: text/plain",
                     f"Content-Length: {len(response_body)}"
                 ]
-                return crlf.join(response_headers) + crlf + crlf + response_body
+                return self.build_response(http_version,200,response_headers,response_body)
             elif method == 'OPTIONS':
                 response_headers = [
-                    f"{http_version} 204 {self.get_status_phrase(204)}",
                     "Allow: GET, POST, HEAD, PUT, DELETE, OPTIONS, TRACE, CONNECT",
                     "Content-Length: 0"
                 ]
-                return crlf.join(response_headers) + crlf + crlf
+                return self.build_response(http_version,204,response_headers,'')
             elif method == 'HEAD':
                 response_headers = [
-                    f"{http_version} 200 {self.get_status_phrase(200)}",
                     "Content-Type: text/plain",
                     f"Content-Length: {len(body)}"
                 ]
-                return crlf.join(response_headers) + crlf + crlf
+                return self.build_response(http_version,200,response_headers,'')
             elif method == 'TRACE':
                 response_body = request_data
                 response_headers = [
-                    f"{http_version} 200 {self.get_status_phrase(200)}",
                     "Content-Type: text/plain",
                     f"Content-Length: {len(response_body)}"
                 ]
-                return crlf.join(response_headers) + crlf + crlf + response_body
+                return self.build_response(http_version,200,response_headers,response_body)
             elif method == 'CONNECT':
                 target = path.strip("/")  # Supongamos que el target está en el path
                 response_body = f"CONNECT method successful! Tunneling to {target} established."
                 response_headers = [
-                    f"{http_version} 200 {self.get_status_phrase(200)}",
                     "Content-Type: text/plain",
                     f"Content-Length: {len(response_body)}"
                 ]
-                return crlf.join(response_headers) + crlf + crlf + response_body
+                return self.build_response(http_version,200,response_headers,response_body)
             else:
                 response_body = 'Method Not Allowed'
                 response_headers = [
-                    f"{http_version} 400 {self.get_status_phrase(400)}",
                     "Content-Type: text/plain",
                     f"Content-Length: {len(response_body)}"
                 ]
-                return crlf.join(response_headers) + crlf + crlf + response_body
+                return self.build_response(http_version,400,response_headers,response_body)
         except Exception as e:
             print(f"Error handling request: {e}")
             response_body = 'Internal Server Error'
             response_headers = [
-                f"{http_version} 500 {self.get_status_phrase(500)}",
                 "Content-Type: text/plain",
                 f"Content-Length: {len(response_body)}"
             ]
-            return crlf.join(response_headers) + crlf + crlf + response_body 
-    def build_response(self,status_code,body):
-        response_line = f'HTTP/1.1 {status_code} {self.get_status_phrase(status_code)}'+crlf
-        headers = 'Content-Type: text/plain'+crlf
-        content_length = f'Content-Length: {len(body)}'+crlf
-        response = response_line + headers + content_length + crlf + body
+            return self.build_response(http_version,500,response_headers,response_body)
+        
+    def build_response(self,http_version,status_code,response_headers,response_body):
+        response_line = f'{http_version} {status_code} {self.get_status_phrase(status_code)}' + crlf
+        headers = crlf.join(response_headers) + crlf
+        response = response_line + headers + crlf + response_body
         return response
     
     def get_status_phrase(self,status_code):
@@ -244,6 +238,7 @@ class HTTPServer:
             201: 'Created',
             204: 'No Content',
             400: 'Bad Request',
+            401: 'Unauthorized',
             404: 'Not Found',
             405: 'Method Not Allowed',
             500: 'Internal Server Error',
