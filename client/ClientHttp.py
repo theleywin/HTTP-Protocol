@@ -66,24 +66,46 @@ class HTTPClient :
 
 
     def chunked_body(self, req_socket: socket.socket):
-        body = ""
+        body = b''
         while True:
-            chunk = ""
-            while True:
-                    data = req_socket.recv(1)
-                    chunk += data.decode()
-                    if chunk.endswith(CharacterUtils.crlf):
-                        break
-               
             
-            chunk_size = int(chunk.strip(), 16)
+            chunk_size_line = b''
+            while True:
+                byte = req_socket.recv(1)
+                if not byte:
+                    raise ConnectionError("Unexpected EOF")
+                chunk_size_line += byte
+                if chunk_size_line.endswith(CharacterUtils.crlf.encode()):
+                    break
+
+            
+            chunk_size_str = chunk_size_line.strip().split(b';', 1)[0]
+            chunk_size = int(chunk_size_str, 16)
+            
             if chunk_size == 0:
                 break
-            chunk_data = req_socket.recv(chunk_size).decode()
+
+            chunk_data = b''
+            while len(chunk_data) < chunk_size:
+                remaining = chunk_size - len(chunk_data)
+                chunk_data += req_socket.recv(remaining)
+
             body += chunk_data
-            req_socket.recv(2)
-            
-        return body
+
+            crlf = b''
+            while len(crlf) < 2:
+                crlf += req_socket.recv(1)
+
+        trailers = b''
+        while True:
+            byte = req_socket.recv(1)
+            if not byte:
+                break
+            trailers += byte
+            if trailers.endswith(CharacterUtils.crlf * 2):
+                break
+
+        return body.decode()
 
 def parse():
     """Parses command-line arguments for making an HTTP request."""
