@@ -33,27 +33,49 @@ class HTTPClient :
             head += data.decode()
             if head.endswith(CharacterUtils.crlf * 2):
                 break
-        head_info = HTTPResponse.parse_response_head(head)
-        if "Content-Length" in head_info["headers_fields"]:
-            body = req_socket.recv(int(head_info["headers_fields"]["Content-Length"])).decode()
+        header_contents = HTTPResponse.parse_response_head(head)
+        
+        if "Transfer-Encoding" in header_contents["headers_fields"] and header_contents["headers_fields"]["Transfer-Encoding"] == "chunked":
+                body = self.chunked_body(req_socket)
+                
+        elif "Content-Length" in header_contents["headers_fields"]:
+            body = req_socket.recv(int(header_contents["headers_fields"]["Content-Length"])).decode()
             
             
         status_line = (
-        f"{head_info['http_version']} "
-        f"{head_info['status_code']} "
-        f"{head_info['reason_phrase']}"
+        f"{header_contents['http_version']} "
+        f"{header_contents['status_code']} "
+        f"{header_contents['reason_phrase']}"
     )
         return {
             "status_line": status_line,
-            "http_version": head_info['http_version'],
-            "status":head_info['status_code'],
-            "reason":head_info['reason_phrase'],
-            "headers": head_info["headers_fields"],
+            "http_version": header_contents['http_version'],
+            "status":header_contents['status_code'],
+            "reason":header_contents['reason_phrase'],
+            "headers": header_contents["headers_fields"],
             "body": body
         }
 
 
-
+    def chunked_body(self, req_socket: socket.socket):
+        body = ""
+        while True:
+            chunk = ""
+            while True:
+                    data = req_socket.recv(1)
+                    chunk += data.decode()
+                    if chunk.endswith(CharacterUtils.crlf):
+                        break
+               
+            
+            chunk_size = int(chunk.strip(), 16)
+            if chunk_size == 0:
+                break
+            chunk_data = req_socket.recv(chunk_size).decode()
+            body += chunk_data
+            req_socket.recv(2)
+            
+        return body
 
 def parse():
     """Parses command-line arguments for making an HTTP request."""
