@@ -14,13 +14,53 @@ class HTTPClient :
         self.url = url
         self.path = path
     
-    def send_request(self, method: str, header: str, data: str):
+    def send_request(self, method: str, header: str, data: str, redirect_count=0, max_redirects=5):
+    
+        headers_dict = json.loads(header)
+        headers_dict = {}
+
+        
+        headers_dict['Host'] = self.host
+
+        request = HTTPRequest.build_http_request(
+            method=method,
+            uri=self.path,
+            headers=headers_dict,
+            body=data
+        )
+
         req_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        req_socket.connect((self.host, self.port))        
-        request = HTTPRequest.build_http_request(method=method, uri=self.path,  headers=header, body=data)
+        req_socket.connect((self.host, self.port))
         req_socket.send(request.encode())
         response = self.receive_response(req_socket)
         req_socket.close()
+
+        # Handle redirects
+        if str(response['status']) in ['301', '302', '303', '307', '308'] and redirect_count < max_redirects:
+            location = response['headers'].get('Location')
+            if not location:
+                return response
+
+            new_method = method
+            new_data = data
+            if response['status'] == '303':
+                new_method = 'GET'
+                new_data = ''
+
+            new_headers = headers_dict.copy()
+            if not new_data:
+                new_headers.pop('Content-Length', None)
+                new_headers.pop('Content-Type', None)
+
+            new_client = HTTPClient(location)
+            return new_client.send_request(
+                method=new_method,
+                header=json.dumps(new_headers),
+                data=new_data,
+                redirect_count=redirect_count + 1,
+                max_redirects=max_redirects
+            )
+
         return response
         
         
