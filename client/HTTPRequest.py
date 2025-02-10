@@ -14,7 +14,7 @@ class HTTPRequest:
         """Constructs the request line using the HTTP method, URI, and version."""
         separator = CharacterUtils.space
         line_break = CharacterUtils.crlf
-        return method + separator + uri + separator + http_version + line_break
+        return method + separator + "http://localhost:8080" +  uri + line_break
 
     
     def format_headers(headers_json: str) -> str:
